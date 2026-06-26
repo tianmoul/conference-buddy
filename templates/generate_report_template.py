@@ -126,8 +126,14 @@ RIGHT_W  = PAGE_W - RIGHT_X - cm(1.20)
 def get_path(folder, number):
     if not folder or not os.path.isdir(folder):
         return None
+    import glob as _glob
+    hits = _glob.glob(os.path.join(folder, f'*_{number}_*.jpg'))
+    if hits:
+        return hits[0]
     for f in os.listdir(folder):
         nums = re.findall(r'\d+', f)
+        if len(nums) >= 2 and int(nums[-2]) == number:
+            return os.path.join(folder, f)
         if nums and int(nums[-1]) == number:
             return os.path.join(folder, f)
     return None
