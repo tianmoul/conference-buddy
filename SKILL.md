@@ -1,18 +1,17 @@
 ---
 name: conference-buddy
 description: |
-  Automatically generate professional conference summary reports (PPTX and/or PDF) from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
+  Automatically generate a professional conference summary PPTX from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
 
   Trigger this skill whenever the user mentions any of the following:
-  - "conference report", "conference summary", "generate slides from photos", "conference PPTX/PDF"
+  - "conference report", "conference summary", "generate slides from photos", "conference PPTX"
   - "会议报告"、"会议总结"、"会议幻灯片"、"生成报告"、"从照片生成总结"
   - User provides a folder path containing conference slide photos and wants a summary document
 
-  Output: consistent-layout PPTX and/or PDF — one photo per slide, keyword bar pinned at a fixed position on every page, large clear images. Supports Focus/Other folder structure or flat folder (all treated as Focus slides).
+  Output: consistent-layout PPTX — one photo per slide, keyword bar pinned at a fixed position on every page, large clear images. Supports Focus/Other folder structure or flat folder (all treated as Focus slides).
 compatibility:
   python_packages:
     - python-pptx
-    - reportlab
     - Pillow
 ---
 
@@ -20,12 +19,12 @@ compatibility:
 
 ## Overview / 功能概览
 
-ConferenceBuddy turns a folder of conference slide photos into a polished summary report. Given a photo library, it:
+ConferenceBuddy turns a folder of conference slide photos into a polished summary PPTX. Given a photo library, it:
 
 1. **Scans** the folder structure (auto-detects `Focus/` + `Other/` or treats all photos as Focus)
 2. **Reads** each photo with vision AI and extracts title, keywords, and key points in Chinese
-3. **Generates** a conference-specific Python script from the bundled templates
-4. **Runs** the script to produce PPTX and/or PDF with pixel-perfect consistent layout
+3. **Generates** a conference-specific Python script from the bundled template
+4. **Runs** the script to produce a PPTX with pixel-perfect consistent layout
 
 ---
 
@@ -39,7 +38,7 @@ Ask the user for (if not already provided):
 | Conference name 会议名称 | ✓ | `APHA Annual Meeting` |
 | Date 日期 | ✓ | `2026年9月15日` |
 | Venue 地点 | ✓ | `Washington D.C.` |
-| Output format 输出格式 | optional | PPTX / PDF / both (default: both) |
+| Output format 输出格式 | — | PPTX only |
 
 ---
 
@@ -140,12 +139,11 @@ For each Other speaker:
 
 ## Step 4 — Generate Conference Script / 生成会议专属脚本
 
-Read the bundled template files:
-- `templates/generate_pptx_template.py` → for PPTX output
-- `templates/generate_report_template.py` → for PDF output
+Read the bundled template:
+- `templates/generate_pptx_template.py` → PPTX output
 
 Steps / 步骤:
-1. Copy template(s) to the output directory (same level as the photo library)
+1. Copy the template to the output directory (same level as the photo library)
 2. Fill in the config section at the top (paths, conference name, speaker info)
 3. Insert the `FOCUS_SLIDES` and `OTHER_SESSIONS` data extracted from photos
 4. Save as `generate_{ConferenceAbbr}.py`
@@ -156,7 +154,6 @@ Steps / 步骤:
 FOCUS_DIR = r'...\Library\...\Focus'
 OTHER_DIR = r'...\Library\...\Other'
 OUTPUT    = r'...\ConferenceName_Year_Summary.pptx'
-OUTPUT_PDF = r'...\ConferenceName_Year_Report.pdf'
 
 CONF_SUBTITLE   = 'Conference Full Name'
 CONF_DATE_VENUE = '2026年X月X日  ·  Venue'
@@ -172,7 +169,6 @@ BAR_FOOTER = 'ConferenceAbbr  ·  Speaker  ·  YYYY-MM-DD'
 
 **Output naming / 输出命名建议:**
 - PPTX: `{ConferenceAbbr}_{Year}_会议总结.pptx`
-- PDF:  `{ConferenceAbbr}_{Year}_报告.pdf`
 
 ---
 
@@ -210,8 +206,6 @@ Set `LAYOUT = '16:9'` or `LAYOUT = 'A4'` at the top of the generated script. The
 | Photo 照片 | 1.20 | 1.41 | 20.80 | 15.60 |
 | Keyword bar 关键概念栏 | 1.20 | **17.61 (fixed!)** | 27.30 | 2.96 |
 | Right text column 右列 | 22.15 | 1.49 | ~6.35 | — |
-
-**PDF note**: `BAR_Y = PAGE_H - BAR_T_TOP - BAR_H` — **absolute constant, never use flowable/frame layout**.
 
 ---
 

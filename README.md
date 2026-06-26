@@ -1,8 +1,8 @@
 # ConferenceBuddy — Claude Code Skill
 
-> **Auto-generate professional conference summary reports (PPTX + PDF) from a folder of slide photos — no manual data entry.**
+> **Auto-generate a professional conference summary PPTX from a folder of slide photos — no manual data entry.**
 > 
-> 从会议幻灯片照片库自动生成专业总结报告（PPTX + PDF），无需手动录入内容。
+> 从会议幻灯片照片库自动生成专业总结 PPTX，无需手动录入内容。
 
 ---
 
@@ -13,7 +13,7 @@ You point ConferenceBuddy at a folder of conference slide photos. It:
 1. **Scans** the folder — auto-detects `Focus/` + `Other/` structure, or treats everything as Focus slides
 2. **Reads** each photo with Claude's vision — extracts speaker name, slide title, keywords, and key bullet points in Chinese
 3. **Generates** a ready-to-run Python script populated with all the extracted data
-4. **Runs** the script — outputs a consistent-layout PPTX and/or PDF
+4. **Runs** the script — outputs a consistent-layout PPTX
 
 Every slide gets one photo, a keyword bar pinned at a fixed position, and a right-hand text column with the summary. The layout never drifts between pages.
 
@@ -23,12 +23,12 @@ Every slide gets one photo, a keyword bar pinned at a fixed position, and a righ
 
 | Element | Specification |
 |---------|--------------|
-| Format | PPTX (python-pptx) + PDF (reportlab canvas) |
+| Format | PPTX (python-pptx) |
 | Page size | **16:9 widescreen 33.87 × 19.05 cm** (default) · A4 landscape 29.70 × 21.00 cm (optional) |
 | Photo area | 19.50 × 14.63 cm (16:9) · 20.80 × 15.60 cm (A4) |
 | Keyword bar | Fixed at T = 16.20 cm (16:9) · 17.61 cm (A4) — never drifts |
 | Photo quality | Original resolution, JPEG quality 87 |
-| Typical output | ~40–50 slides, 80–150 MB PPTX, 30–50 MB PDF |
+| Typical output | ~40–50 slides, 80–150 MB PPTX |
 | Switch layout | Set `LAYOUT = '16:9'` or `'A4'` in one line at the top of the script |
 
 ---
@@ -49,7 +49,7 @@ create conference PPTX from Library/2026_12_01_ASH
 ## Requirements
 
 ```bash
-pip install python-pptx reportlab Pillow lxml
+pip install python-pptx Pillow lxml
 ```
 
 - **Claude Code** with vision (image reading) enabled
@@ -111,7 +111,7 @@ User: "会议总结 Library/2026_09_15_APHA"
   │     speaker name + affiliation (from first/title slide)
   │
   ├── Writes generate_APHA2026.py (populated from template)
-  ├── Runs it → APHA_2026_会议总结.pptx + APHA_2026_报告.pdf
+  ├── Runs it → APHA_2026_会议总结.pptx
   └── Reports: "Done — 47 slides, output at d:\..."
 ```
 
