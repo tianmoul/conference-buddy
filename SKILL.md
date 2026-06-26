@@ -1,0 +1,232 @@
+---
+name: conference-buddy
+description: |
+  Automatically generate professional conference summary reports (PPTX and/or PDF) from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
+
+  Trigger this skill whenever the user mentions any of the following:
+  - "conference report", "conference summary", "generate slides from photos", "conference PPTX/PDF"
+  - "会议报告"、"会议总结"、"会议幻灯片"、"生成报告"、"从照片生成总结"
+  - User provides a folder path containing conference slide photos and wants a summary document
+
+  Output: consistent-layout PPTX and/or PDF — one photo per slide, keyword bar pinned at a fixed position on every page, large clear images. Supports Focus/Other folder structure or flat folder (all treated as Focus slides).
+compatibility:
+  python_packages:
+    - python-pptx
+    - reportlab
+    - Pillow
+---
+
+# ConferenceBuddy — 会议报告生成器
+
+## Overview / 功能概览
+
+ConferenceBuddy turns a folder of conference slide photos into a polished summary report. Given a photo library, it:
+
+1. **Scans** the folder structure (auto-detects `Focus/` + `Other/` or treats all photos as Focus)
+2. **Reads** each photo with vision AI and extracts title, keywords, and key points in Chinese
+3. **Generates** a conference-specific Python script from the bundled templates
+4. **Runs** the script to produce PPTX and/or PDF with pixel-perfect consistent layout
+
+---
+
+## Step 1 — Collect Info / 信息收集
+
+Ask the user for (if not already provided):
+
+| Field | Required | Example |
+|-------|----------|---------|
+| Photo library path 照片库路径 | ✓ | `d:\Conferences\Library\2026_09_15_APHA` |
+| Conference name 会议名称 | ✓ | `APHA Annual Meeting` |
+| Date 日期 | ✓ | `2026年9月15日` |
+| Venue 地点 | ✓ | `Washington D.C.` |
+| Output format 输出格式 | optional | PPTX / PDF / both (default: both) |
+
+---
+
+## Step 2 — Scan Folder & Build Photo Index / 扫描文件夹
+
+```python
+import os, glob, re
+
+library_path = r'...'
+
+focus_dir = os.path.join(library_path, 'Focus')
+other_dir = os.path.join(library_path, 'Other')
+
+has_focus = os.path.exists(focus_dir)
+has_other = os.path.exists(other_dir)
+
+# No subfolders → treat everything as Focus
+if not has_focus and not has_other:
+    focus_dir = library_path
+    has_focus = True
+    has_other = False
+```
+
+**Sorting rule / 排序规则**: Extract the trailing number from each filename and sort numerically:
+
+```python
+def photo_key(path):
+    nums = re.findall(r'\d+', os.path.basename(path))
+    return int(nums[-1]) if nums else 0
+
+focus_photos = sorted(glob.glob(os.path.join(focus_dir, '*.jpg')) +
+                      glob.glob(os.path.join(focus_dir, '*.jpeg')),
+                      key=photo_key)
+```
+
+Assign each photo an integer `num` (from filename or sequential index). This `num` is used as the first field in `FOCUS_SLIDES`.
+
+---
+
+## Step 3 — Vision Analysis / 视觉分析每张照片
+
+This is the core step. Use the `Read` tool on each `.jpg`/`.jpeg` file to view the slide, then extract content.
+
+### Focus Photos (one slide per page)
+
+Extract for each Focus photo:
+
+| Field | Requirement | Notes |
+|-------|-------------|-------|
+| `title` | ≤20 chars, **Chinese** | Slide title; translate English titles to Chinese |
+| `tags` | 3–5 terms | Key concepts/methods; keep English proper nouns (RWE, AI, TTE) |
+| `bullets` | 3–5 lines, **Chinese** | Key points in your own words; sub-points use two-space indent |
+
+**Language rule / 语言规则**: Output in Chinese by default. Keep technical proper nouns in original form (RWE, AI, LLM, SGLT-2, TTE, etc.).
+
+**Format example / 格式示例:**
+```python
+(42, 'AI助力真实世界研究',
+ ['RWE', 'AI辅助', '因果推断'],
+ ['真实世界数据缺乏随机性，混杂因素控制是核心挑战',
+  'AI可辅助识别混杂因素并建立倾向性评分',
+  '  → 方法：IPTW / MSM 是当前主流控制手段'])
+```
+
+### Identify Focus Speaker / 识别 Focus 讲者
+
+Usually the first slide (title page) contains speaker name, affiliation, and talk title. Extract:
+- `speaker_name` — e.g. `詹思延`
+- `speaker_affil` — e.g. `北京大学公共卫生学院院长`
+- `focus_title_zh` — talk title in Chinese
+- `focus_title_en` — talk title in English (if present)
+
+### Other Photos (grouped by speaker) / Other 照片
+
+Other photos are typically ordered by speaker, with multiple consecutive slides per speaker. Identify speaker boundaries by looking for title/intro slides with name and affiliation.
+
+For each Other speaker:
+
+```python
+{
+    'speaker': 'Speaker Name',
+    'affiliation': 'Institution / Title',
+    'title': '演讲题目中文',
+    'en_title': 'Talk Title in English',
+    'photo_nums': [68, 74, 80],  # 2–3 representative slide numbers
+    'points': [
+        '核心观点一（1-2句话）',
+        '  → 子观点（两空格缩进）',
+        '',                         # '' = blank line / paragraph break
+        '核心观点二',
+    ],
+}
+```
+
+**Choose representative photos**: prefer slides with charts or key data, not pure text pages.
+
+---
+
+## Step 4 — Generate Conference Script / 生成会议专属脚本
+
+Read the bundled template files:
+- `templates/generate_pptx_template.py` → for PPTX output
+- `templates/generate_report_template.py` → for PDF output
+
+Steps / 步骤:
+1. Copy template(s) to the output directory (same level as the photo library)
+2. Fill in the config section at the top (paths, conference name, speaker info)
+3. Insert the `FOCUS_SLIDES` and `OTHER_SESSIONS` data extracted from photos
+4. Save as `generate_{ConferenceAbbr}.py`
+
+**Config variables to update / 需要修改的配置变量:**
+
+```python
+FOCUS_DIR = r'...\Library\...\Focus'
+OTHER_DIR = r'...\Library\...\Other'
+OUTPUT    = r'...\ConferenceName_Year_Summary.pptx'
+OUTPUT_PDF = r'...\ConferenceName_Year_Report.pdf'
+
+CONF_SUBTITLE   = 'Conference Full Name'
+CONF_DATE_VENUE = '2026年X月X日  ·  Venue'
+CONF_EN_VENUE   = 'City, Country'
+
+FOCUS_SPEAKER  = 'Speaker Name'
+FOCUS_AFFIL    = 'Institution'
+FOCUS_TITLE_ZH = '演讲题目中文'
+FOCUS_TITLE_EN = 'Talk Title in English'
+
+BAR_FOOTER = 'ConferenceAbbr  ·  Speaker  ·  YYYY-MM-DD'
+```
+
+**Output naming / 输出命名建议:**
+- PPTX: `{ConferenceAbbr}_{Year}_会议总结.pptx`
+- PDF:  `{ConferenceAbbr}_{Year}_报告.pdf`
+
+---
+
+## Step 5 — Run & Output / 执行输出
+
+```python
+import subprocess, sys
+result = subprocess.run([sys.executable, script_path],
+                       capture_output=True, text=True, encoding='utf-8')
+print(result.stdout)
+if result.returncode != 0:
+    print('ERROR:', result.stderr)
+```
+
+Report the output file path and total page count to the user.
+
+---
+
+## Layout Constants / 布局参数（不要修改）
+
+These values are verified against the reference design. Do not change them.
+
+### PPTX (A4 Landscape: 29.70 × 21.00 cm)
+
+| Element | L | T | W | H |
+|---------|---|---|---|---|
+| Photo 照片 | 1.20 | 1.41 | 20.80 | 15.60 |
+| Keyword bar 关键概念栏 | 1.20 | **17.61 (fixed!)** | 27.30 | 2.96 |
+| Right text column 右列 | 22.15 | 1.49 | ~6.35 | — |
+
+### PDF (A4 Landscape: 841.89 × 595.28 pt)
+
+Keyword bar: `BAR_Y = PAGE_H - cm(17.61) - cm(2.96)` — **absolute constant, never use flowable/frame layout for this element**.
+
+---
+
+## Photo Lookup / 照片查找函数
+
+Templates default to matching filenames by trailing number (`*_{num}_*.jpg`). If the new conference uses a different naming scheme, update `find_photo` / `get_path`:
+
+```python
+def find_photo(num, folder):
+    for f in os.listdir(folder):
+        nums = re.findall(r'\d+', f)
+        if nums and int(nums[-1]) == num:
+            return os.path.join(folder, f)
+    return None
+```
+
+---
+
+## Notes / 注意事项
+
+- **Vision analysis takes time / 分析需要时间**: ~5–10s per photo; keep the user informed of progress.
+- **Blurry photos / 照片模糊**: Mark as `(照片模糊，内容待确认)` with empty placeholder bullets; remind user to fill in after generation.
+- **Charts and data slides / 图表页**: Extract the numbers and conclusions shown, not a description of the chart shape.
+- **Chinese output by default / 中文优先**: Even if the original slides are in English, write bullets in Chinese. Keep English proper nouns as-is.
