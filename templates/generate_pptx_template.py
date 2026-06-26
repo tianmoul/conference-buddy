@@ -88,21 +88,33 @@ TEXT_DARK  = RGBColor(0x1A, 0x1A, 0x2E)
 MUTED      = RGBColor(0x66, 0x77, 0x88)
 GREY_LINE  = RGBColor(0xCC, 0xD4, 0xDE)
 
-SW, SH = 29.70, 21.00
+# ── Layout preset — change LAYOUT to switch ──────────────────────────────────
+LAYOUT = '16:9'   # '16:9' (widescreen, default) | 'A4' (landscape, legacy)
+
 ML = 1.20
+if LAYOUT == '16:9':
+    SW, SH           = 33.87, 19.05   # standard widescreen (13.33" × 7.5")
+    PHOTO_W, PHOTO_H = 19.50, 14.63   # 4:3 photo
+    PHOTO_T          = 1.20
+    BAR_T            = 16.20          # FIXED for this layout
+    BAR_H            = 2.50
+    HDR_T            = 1.20
+    HDR_H            = 2.00
+else:                                  # A4 landscape
+    SW, SH           = 29.70, 21.00
+    PHOTO_W, PHOTO_H = 20.80, 15.60
+    PHOTO_T          = 1.41
+    BAR_T            = 17.61          # FIXED for this layout
+    BAR_H            = 2.96
+    HDR_T            = 1.49
+    HDR_H            = 2.30
+
 PHOTO_L  = ML
-PHOTO_T  = 1.41
-PHOTO_W  = 20.80
-PHOTO_H  = 15.60
 GAP      = 0.15
 RIGHT_L  = PHOTO_L + PHOTO_W + GAP
 RIGHT_W  = SW - RIGHT_L - ML
 BAR_L    = ML
-BAR_T    = 17.61   # FIXED — do not change
 BAR_W    = SW - 2 * ML
-BAR_H    = 2.96
-HDR_T    = 1.49
-HDR_H    = 2.30
 DIV_T    = HDR_T + HDR_H + 0.15
 BODY_T   = DIV_T + 0.20
 BODY_BOT = BAR_T - 0.20

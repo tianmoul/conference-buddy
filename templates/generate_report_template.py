@@ -93,22 +93,33 @@ for _name, _path in [('MicrosoftYaHei', 'C:/Windows/Fonts/msyh.ttc'),
             pass
 print(f'Font: {BASE_FONT}')
 
-PAGE_W, PAGE_H = landscape(A4)   # 841.89 × 595.28 pt
-
 def cm(x):
     return x * 28.3465
 
+# ── Layout preset — change LAYOUT to switch ──────────────────────────────────
+LAYOUT = '16:9'   # '16:9' (widescreen, default) | 'A4' (landscape, legacy)
+
+if LAYOUT == '16:9':
+    PAGE_W, PAGE_H   = cm(33.87), cm(19.05)   # 960 × 540 pt (standard widescreen)
+    PHOTO_W, PHOTO_H = cm(19.50), cm(14.63)
+    PHOTO_T_TOP      = cm(1.20)
+    BAR_T_TOP        = cm(16.20)               # FIXED for this layout
+    BAR_H            = cm(2.50)
+else:                                           # A4 landscape
+    PAGE_W, PAGE_H   = landscape(A4)           # 841.89 × 595.28 pt
+    PHOTO_W, PHOTO_H = cm(20.80), cm(15.60)
+    PHOTO_T_TOP      = cm(1.41)
+    BAR_T_TOP        = cm(17.61)               # FIXED for this layout
+    BAR_H            = cm(2.96)
+
 PHOTO_X  = cm(1.20)
-PHOTO_W  = cm(20.80)
-PHOTO_H  = cm(15.60)
-PHOTO_Y  = PAGE_H - cm(1.41) - PHOTO_H
+PHOTO_Y  = PAGE_H - PHOTO_T_TOP - PHOTO_H
 
 BAR_X    = cm(1.20)
-BAR_W    = cm(27.30)
-BAR_H    = cm(2.96)
-BAR_Y    = PAGE_H - cm(17.61) - BAR_H   # constant, cannot drift
+BAR_W    = PAGE_W - cm(2.40)
+BAR_Y    = PAGE_H - BAR_T_TOP - BAR_H         # constant, cannot drift
 
-RIGHT_X  = cm(22.15)
+RIGHT_X  = PHOTO_X + PHOTO_W + cm(0.15)
 RIGHT_W  = PAGE_W - RIGHT_X - cm(1.20)
 
 
@@ -321,7 +332,7 @@ def build_pdf():
     global FOCUS_NOTE
     FOCUS_NOTE = FOCUS_NOTE or f'以下 {len(FOCUS_SLIDES)} 张幻灯片逐页解读'
 
-    c = _canvas.Canvas(OUTPUT_PDF, pagesize=landscape(A4))
+    c = _canvas.Canvas(OUTPUT_PDF, pagesize=(PAGE_W, PAGE_H))
 
     print('封面...')
     draw_cover(c)

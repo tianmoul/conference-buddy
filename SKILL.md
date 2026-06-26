@@ -191,11 +191,19 @@ Report the output file path and total page count to the user.
 
 ---
 
-## Layout Constants / 布局参数（不要修改）
+## Layout Constants / 布局参数
 
-These values are verified against the reference design. Do not change them.
+Set `LAYOUT = '16:9'` or `LAYOUT = 'A4'` at the top of the generated script. The rest of the code adapts automatically.
 
-### PPTX (A4 Landscape: 29.70 × 21.00 cm)
+### 16:9 Widescreen — default / 默认（标准宽屏 33.87 × 19.05 cm）
+
+| Element | L | T | W | H |
+|---------|---|---|---|---|
+| Photo 照片 | 1.20 | 1.20 | 19.50 | 14.63 |
+| Keyword bar 关键概念栏 | 1.20 | **16.20 (fixed!)** | 31.47 | 2.50 |
+| Right text column 右列 | 20.85 | 1.20 | ~11.82 | — |
+
+### A4 Landscape — legacy / 备用（A4 横向 29.70 × 21.00 cm）
 
 | Element | L | T | W | H |
 |---------|---|---|---|---|
@@ -203,9 +211,7 @@ These values are verified against the reference design. Do not change them.
 | Keyword bar 关键概念栏 | 1.20 | **17.61 (fixed!)** | 27.30 | 2.96 |
 | Right text column 右列 | 22.15 | 1.49 | ~6.35 | — |
 
-### PDF (A4 Landscape: 841.89 × 595.28 pt)
-
-Keyword bar: `BAR_Y = PAGE_H - cm(17.61) - cm(2.96)` — **absolute constant, never use flowable/frame layout for this element**.
+**PDF note**: `BAR_Y = PAGE_H - BAR_T_TOP - BAR_H` — **absolute constant, never use flowable/frame layout**.
 
 ---
 

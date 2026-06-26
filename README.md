@@ -24,11 +24,12 @@ Every slide gets one photo, a keyword bar pinned at a fixed position, and a righ
 | Element | Specification |
 |---------|--------------|
 | Format | PPTX (python-pptx) + PDF (reportlab canvas) |
-| Page size | A4 Landscape (29.70 × 21.00 cm) |
-| Photo area | 20.80 × 15.60 cm — fills ~70% of each page |
-| Keyword bar | Fixed at T = 17.61 cm on every slide |
+| Page size | **16:9 widescreen 33.87 × 19.05 cm** (default) · A4 landscape 29.70 × 21.00 cm (optional) |
+| Photo area | 19.50 × 14.63 cm (16:9) · 20.80 × 15.60 cm (A4) |
+| Keyword bar | Fixed at T = 16.20 cm (16:9) · 17.61 cm (A4) — never drifts |
 | Photo quality | Original resolution, JPEG quality 87 |
 | Typical output | ~40–50 slides, 80–150 MB PPTX, 30–50 MB PDF |
+| Switch layout | Set `LAYOUT = '16:9'` or `'A4'` in one line at the top of the script |
 
 ---
 
