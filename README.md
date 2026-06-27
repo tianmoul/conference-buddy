@@ -1,8 +1,8 @@
 # ConferenceBuddy · Conference Slide Auto-Summary · 会议幻灯片自动总结
 
-> **In one line: turn a stack of crooked, glare-covered phone photos of conference slides into a clean, uniformly-formatted summary deck — automatically.**
+> **In one line: turn a stack of messy, glare-covered phone photos of conference slides into a clean, uniformly-formatted summary deck — automatically.**
 >
-> **一句话：把一沓在台下随手拍的、歪斜带眩光的会议幻灯片照片，自动变成一份排版统一、干净专业的总结 PPT。**
+> **一句话：把一沓在台下随手拍的、带眩光色偏的会议幻灯片照片，自动变成一份排版统一、干净专业的总结 PPT。**
 
 [![latest release](https://img.shields.io/github/v/release/tianmoul/conference-buddy?label=version%20%E7%89%88%E6%9C%AC&sort=semver)](https://github.com/tianmoul/conference-buddy/releases/latest)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -14,9 +14,9 @@
 
 ## ✨ The WOW Factor: from a messy photo to a finished slide · 从一张潦草的照片到一页成品幻灯片
 
-A photo you snap from the audience is rough: spotlights along the top, blue decorative frames on the sides, a blue color cast on the screen, rows of heads at the bottom, keystone tilt, and glare. ConferenceBuddy **finds the real slide area → crops away the frames / spotlights / heads → restores the screen photo into a clean white "scanned document" → reads the content and writes Chinese bullet points → lays it into one consistent template** — with no manual cropping or data entry.
+A photo you snap from the audience is rough: spotlights along the top, blue decorative frames on the sides, a blue color cast on the screen, rows of heads at the bottom, and glare. ConferenceBuddy **finds the real slide area → crops away the frames / spotlights / heads → restores the screen photo into a clean white "scanned document" → reads the content and writes Chinese bullet points → lays it into one consistent template** — with no manual cropping or data entry.
 
-你在台下用手机拍的照片是这样的：上面一排射灯、左右蓝色装饰边框、屏幕偏蓝、下面全是观众后脑勺、整体歪斜反光。ConferenceBuddy 会**自动识别中间真正的幻灯片区域 → 裁掉边框/射灯/人头 → 把翻拍屏幕还原成干净的白底"扫描件" → 读懂内容并写成中文要点 → 排进统一模板**，全程不需要手动抠图或录入。
+你在台下用手机拍的照片是这样的：上面一排射灯、左右蓝色装饰边框、屏幕偏蓝、下面全是观众后脑勺、还带着反光。ConferenceBuddy 会**自动识别中间真正的幻灯片区域 → 裁掉边框/射灯/人头 → 把翻拍屏幕还原成干净的白底"扫描件" → 读懂内容并写成中文要点 → 排进统一模板**，全程不需要手动抠图或录入。
 
 ![pipeline](assets/pipeline.png)
 
