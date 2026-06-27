@@ -9,7 +9,8 @@
 
 <p align="center"><img src="assets/pipeline.png" width="460" alt="pipeline"></p>
 
-*Five steps (top → bottom) · 五步（从上到下）：raw photo 原始照片 → auto-detect slide region 自动识别PPT区域 → crop 裁切 → scan to a clean document 扫描成白底文档 → finished slide 成品幻灯片*
+*Five steps (top → bottom): raw photo → auto-detect slide region → crop → scan to a clean document → finished slide.*
+<br>*五步（从上到下）：原始照片 → 自动识别PPT区域 → 裁切 → 扫描成白底文档 → 成品幻灯片。*
 
 > 🔒 **Privacy · 隐私** — In these README example images, all faces, the audience, and the slide content are pixelated, and the summary/keywords are shown as `XXXX`. This mosaic exists **only in the README images** — the actual tool produces clean, un-blurred output. · 示例图中人脸、观众和幻灯片内容均已打码，摘要/关键词用 `XXXX` 占位；打码**只存在于 README 示意图里**，真正的工具输出是清晰无码的。
 
