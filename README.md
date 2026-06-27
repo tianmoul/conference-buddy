@@ -4,7 +4,19 @@
 > 
 > 从会议幻灯片照片库自动生成专业总结 PPTX，无需手动录入内容。
 
-**Version 2.0**
+**Version 2.1**
+
+---
+
+## What's New in 2.1
+
+- **Document-scan effect.** Slides that are dark text on a true white / light
+  background (tables, reference lists, plain-text academic slides) can be
+  rendered as a clean **scanned document** — flat white background, crisp dark
+  text — removing the screen photo's glare, uneven lighting, and LED color cast
+  for an original-PPT / scan quality. Applied **selectively**: Claude vision
+  flags which slides qualify (`scan=True`), and colored / dark-theme / photo
+  slides keep their clean crop unchanged. Crop first, then scan.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: conference-buddy
-version: 2.0.0
+version: 2.1.0
 description: |
   Automatically generate a professional conference summary PPTX from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
 
@@ -92,6 +92,8 @@ Extract for each Focus photo:
 | `title` | ≤20 chars, **Chinese** | Slide title; translate English titles to Chinese |
 | `tags` | 3–5 terms | Key concepts/methods; keep English proper nouns (RWE, AI, TTE) |
 | `bullets` | 3–5 lines, **Chinese** | Key points in your own words; sub-points use two-space indent |
+
+(The document-scan in Step 3.6 is automatic — no per-slide field to extract.)
 
 **Language rule / 语言规则**: Output in Chinese by default. Keep technical proper nouns in original form (RWE, AI, LLM, SGLT-2, TTE, etc.).
 
@@ -189,6 +191,38 @@ If a future venue behaves differently, the tunables at the top of
 
 ---
 
+## Step 3.6 — Document-Scan Effect / 扫描件效果
+
+ConferenceBuddy renders each cropped slide as a clean **scanned document** — flat
+white background, crisp dark text — via `crop_content(path, scan='auto')`. It
+**white-balances** the slide (these are photos of a *color-tinted* screen, so a
+truly white slide photographs as e.g. light blue — white balance restores it),
+then flattens the lighting/glare and sharpens the text, giving that "original-PPT
+/ scan" quality. Colored figures and highlights are preserved.
+
+**It is automatic and safe.** `scan='auto'` (the default) scans every slide
+**except dark-themed ones**, which it auto-detects by brightness and leaves as a
+plain crop — scanning a dark slide would wash it out. So most light/white slides
+(the vast majority of academic decks) become clean documents, and the few
+dark-background title/section slides keep their original look.
+
+Control it via the config near the top of the generated script:
+
+```python
+SCAN_MODE    = 'auto'     # 'auto' (scan light, skip dark) | 'on' (all) | 'off'
+FORCE_NOSCAN = set()      # nums to always keep as a plain crop, e.g. {26, 27}
+```
+
+The template's `cropped_photo()` applies this to Focus and Other alike. No
+per-slide vision flag is needed — the dark-slide skip is handled by the
+brightness heuristic (`_C_DARK_MED` in slide_crop.py).
+
+**Workflow order**: crop first, then scan — `crop_content` crops to the slide
+content and applies `document_scan` to the result, so frames/spotlights/audience
+are gone before the scan runs.
+
+---
+
 ## Step 4 — Generate Conference Script / 生成会议专属脚本
 
 Read the bundled template:
@@ -196,6 +230,7 @@ Read the bundled template:
 
 Copy **`slide_crop.py`** next to the generated script so `import slide_crop`
 works, then crop every photo through `crop_content` as described in Step 3.5.
+Populate `SCAN_NUMS` from the `scan` flags collected in Step 3 (see Step 3.6).
 
 Steps / 步骤:
 1. Copy the template to the output directory (same level as the photo library)

@@ -491,10 +491,60 @@ def crop_slide_to_bytesio(src_path, **kwargs):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Document-scan effect (v2.1)
+#
+# Turn a *photo of a slide* into a clean "scanned document" — flat white
+# background, crisp dark text — for slides that are dark-text-on-light-background
+# (tables, reference lists, text-heavy academic slides). It removes the screen
+# photo's uneven lighting, glare, and LED color cast.
+#
+# IMPORTANT: only apply this to TRUE white/light-background, dark-text slides.
+# On dark-themed or light-text-on-color slides it destroys the content, and on
+# photographic slides it looks wrong. Because these are photos of a *tinted*
+# screen, a brightness/saturation heuristic cannot reliably tell a white slide
+# from a colored one — let Claude vision make that call during the photo read
+# (return a per-slide `scan` flag) and pass scan=True only for those.
+# ══════════════════════════════════════════════════════════════════════════════
+
+_C_DARK_MED = 110     # cropped slide with median brightness below this is a
+                      # dark-themed slide → never document-scan it (it would wash out)
+
+
+def _is_light_slide(bgr):
+    """True if the cropped slide is light-background (suitable for scanning)."""
+    return float(np.median(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY))) >= _C_DARK_MED
+
+
+def document_scan(bgr):
+    """Return a 'scanned document' version of a dark-text-on-light-bg slide."""
+    h, w = bgr.shape[:2]
+    f = bgr.astype(np.float32)
+    # 1. White-patch white balance — these are photos of a COLOR-TINTED screen,
+    #    so the (truly white) slide background photographs as e.g. light blue.
+    #    Take the bright background pixels as the "white point" and scale each
+    #    channel so they become neutral. This is what turns a blue-cast white
+    #    slide back into a clean white one.
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    bgm  = gray >= np.percentile(gray, 75)
+    wp   = f[bgm].reshape(-1, 3).mean(0)            # tinted-white point (BGR)
+    f    = np.clip(f * (wp.mean() / (wp + 1.0)), 0, 255)
+    # 2. Divide out the (slowly-varying) background illumination → light areas go
+    #    to ~white, dark text/colored figures stay. Fixes glare and uneven light.
+    bg   = cv2.GaussianBlur(f, (0, 0), sigmaX=max(h, w) * 0.05)
+    norm = np.clip(f / (bg + 1.0) * 242.0, 0, 255)
+    # 3. Gentle S-curve to deepen text, then unsharp-mask for crisp glyph edges.
+    x   = np.clip((norm / 255.0 - 0.5) * 1.20 + 0.5, 0, 1)
+    out = (x * 255).astype(np.uint8)
+    blur = cv2.GaussianBlur(out, (0, 0), 1.0)
+    out  = cv2.addWeighted(out, 1.6, blur, -0.6, 0)
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Public API — content crop (v6, the one the skill should use)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def crop_content(src_path, target_size=None):
+def crop_content(src_path, target_size=None, scan='auto'):
     """
     Crop a conference photo down to the slide content (PPT info region):
     colored side frames, spotlight bar, and audience removed.
@@ -506,6 +556,10 @@ def crop_content(src_path, target_size=None):
                                    exactly these pixels. Use this to force a set
                                    of photos to a UNIFORM size for tidy stacking
                                    (aspect ratio is intentionally not preserved).
+    scan        : 'auto' | bool  — document-scan effect (white bg, crisp text).
+                                   'auto' (default): scan unless the slide is a
+                                   dark-themed slide (auto-detected by brightness).
+                                   True forces it; False disables it.
 
     Returns a PIL.Image. Falls back to a conservative centre crop on failure.
     """
@@ -523,6 +577,13 @@ def crop_content(src_path, target_size=None):
             crop = img[int(ih * 0.12): int(ih * 0.80), 0:iw]
     else:
         crop = img[int(ih * 0.12): int(ih * 0.80), 0:iw]
+
+    if scan == 'auto':
+        do_scan = _is_light_slide(crop)
+    else:
+        do_scan = bool(scan)
+    if do_scan:
+        crop = document_scan(crop)
 
     pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
     if target_size is not None:

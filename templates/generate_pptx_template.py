@@ -202,14 +202,23 @@ def add_photo(slide, path, l, t, max_w, max_h):
 # Requires slide_crop.py copied next to this script. See SKILL.md Step 3.5.
 import tempfile, slide_crop
 OTHER_UNIFORM = (1600, 900)                     # uniform Other thumbnail size (px)
+# Document-scan (v2.1): 'auto' renders every slide as a clean white document but
+# automatically SKIPS dark-themed slides (brightness-detected). 'on' forces all,
+# 'off' disables. FORCE_NOSCAN keeps specific nums as a plain crop. See SKILL 3.6.
+SCAN_MODE     = 'auto'                           # 'auto' | 'on' | 'off'
+FORCE_NOSCAN  = set()
 _CROP_CACHE   = tempfile.mkdtemp(prefix='confbuddy_')
 
 
 def cropped_photo(num, path, target=None):
-    """crop_content(path) cached to a temp PNG; target forces a uniform size."""
-    out = os.path.join(_CROP_CACHE, f'{num}_{"u" if target else "f"}.png')
+    """crop_content(path) cached to a temp PNG; target forces a uniform size.
+    Document-scans light slides automatically (SCAN_MODE), skipping dark ones."""
+    scan = False if num in FORCE_NOSCAN else \
+           ('auto' if SCAN_MODE == 'auto' else (SCAN_MODE == 'on'))
+    tag  = ('u' if target else 'f') + {True: 's', False: '', 'auto': 'a'}[scan]
+    out  = os.path.join(_CROP_CACHE, f'{num}_{tag}.png')
     if not os.path.isfile(out):
-        slide_crop.crop_content(path, target_size=target).save(out)
+        slide_crop.crop_content(path, target_size=target, scan=scan).save(out)
     return out
 
 
