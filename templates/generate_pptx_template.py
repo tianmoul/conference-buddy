@@ -198,6 +198,21 @@ def add_photo(slide, path, l, t, max_w, max_h):
     slide.shapes.add_picture(path, Cm(off_l), Cm(off_t), Cm(fw), Cm(fh))
 
 
+# ── Crop photos down to the slide content (frames/spotlights/audience removed) ─
+# Requires slide_crop.py copied next to this script. See SKILL.md Step 3.5.
+import tempfile, slide_crop
+OTHER_UNIFORM = (1600, 900)                     # uniform Other thumbnail size (px)
+_CROP_CACHE   = tempfile.mkdtemp(prefix='confbuddy_')
+
+
+def cropped_photo(num, path, target=None):
+    """crop_content(path) cached to a temp PNG; target forces a uniform size."""
+    out = os.path.join(_CROP_CACHE, f'{num}_{"u" if target else "f"}.png')
+    if not os.path.isfile(out):
+        slide_crop.crop_content(path, target_size=target).save(out)
+    return out
+
+
 def build_cover(prs):
     slide = blank_slide(prs)
     add_rect(slide, ML, 1.41, SW - 2*ML, SH - 1.41 - 0.43, DARK_BLUE)
@@ -263,9 +278,9 @@ def build_focus_slide(prs, idx, num, title, tags, bullets):
 
     photo_path = find_photo(num, FOCUS_DIR)
     if photo_path:
-        slide.shapes.add_picture(photo_path,
-                                  Cm(PHOTO_L), Cm(PHOTO_T),
-                                  Cm(PHOTO_W), Cm(PHOTO_H))
+        # Crop to slide content, then place preserving aspect (fills width).
+        add_photo(slide, cropped_photo(num, photo_path),
+                  PHOTO_L, PHOTO_T, PHOTO_W, PHOTO_H)
     else:
         add_rect(slide, PHOTO_L, PHOTO_T, PHOTO_W, PHOTO_H, RGBColor(0xDD, 0xDD, 0xDD))
 
@@ -359,7 +374,8 @@ def build_other_slide(prs, session):
     if en_title:
         para(tf, en_title, size=10, color=LIGHT_BLUE, space_before=3)
 
-    btxb = add_textbox(slide, ML + 0.1, 4.40, 15.50, SH - 4.40 - 0.50)
+    TEXT_W = 17.0
+    btxb = add_textbox(slide, ML + 0.1, 4.40, TEXT_W, SH - 4.40 - 0.50)
     tf2 = btxb.text_frame
     tf2.word_wrap = True
     first = True
@@ -376,9 +392,9 @@ def build_other_slide(prs, session):
             r = p.add_run()
             r.text = line.strip()
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(10)
+            r.font.size = Pt(12)
             r.font.color.rgb = MUTED
-            p.space_before = Pt(1)
+            p.space_before = Pt(2)
         else:
             p = tf2.add_paragraph() if not first else tf2.paragraphs[0]
             if first:
@@ -386,22 +402,31 @@ def build_other_slide(prs, session):
             r = p.add_run()
             r.text = line
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(11)
+            r.font.size = Pt(13)
             r.font.color.rgb = TEXT_DARK
-            p.space_before = Pt(5)
+            p.space_before = Pt(6)
             p.space_after = Pt(2)
 
-    photo_l = 18.70
-    photo_w = SW - photo_l - ML
-    avail_h = SH - 4.40 - 0.50
+    # Other thumbnails: size by AVAILABLE HEIGHT so all 3 fit on the page (never
+    # overflow the bottom). Then fill the region to the RIGHT of the text column
+    # (moved left, no big middle gap), widening up to a capped 2.3:1 aspect so
+    # the space is used without looking squished. Uniform size keeps it tidy.
     ph_count = min(len(photo_nums), 3)
     if ph_count > 0:
-        ph_h = avail_h / ph_count - 0.15
+        text_right = ML + 0.1 + TEXT_W + 0.5    # just right of the points column
+        right_edge = SW - ML
+        avail_top, avail_bot, gap = 4.30, SH - 0.45, 0.12
+        ph_h = (avail_bot - avail_top - gap * (ph_count - 1)) / ph_count
+        region_w = right_edge - text_right
+        ph_w = min(region_w, ph_h * 2.30)       # fill width, cap stretch at 2.3:1
+        photo_l = text_right + (region_w - ph_w) / 2   # centre in the region
         for i, pnum in enumerate(photo_nums[:ph_count]):
             ppath = find_photo(pnum, OTHER_DIR) or find_photo(pnum, FOCUS_DIR)
             if ppath:
-                t = 4.40 + i * (ph_h + 0.15)
-                add_photo(slide, ppath, photo_l, t, photo_w, ph_h)
+                t = avail_top + i * (ph_h + gap)
+                slide.shapes.add_picture(
+                    cropped_photo(pnum, ppath, target=OTHER_UNIFORM),
+                    Cm(photo_l), Cm(t), Cm(ph_w), Cm(ph_h))
 
 
 def build():

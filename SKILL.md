@@ -1,5 +1,6 @@
 ---
 name: conference-buddy
+version: 2.0.0
 description: |
   Automatically generate a professional conference summary PPTX from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
 
@@ -137,10 +138,64 @@ For each Other speaker:
 
 ---
 
+## Step 3.5 — Crop Photos to the Slide Content / 照片裁切（slide_crop.py）
+
+Conference photos show the speaker's slide on a decorated LED wall: the slide is
+flanked LEFT/RIGHT by colored decorative frames, capped ABOVE by stage
+spotlights, and bordered BELOW by audience heads. The report should show **only
+the slide itself** (the "PPT info region") — frames, spotlights, and audience
+removed. The bundled **`slide_crop.py`** does this automatically.
+
+```python
+import slide_crop                       # bundled next to this skill
+
+# One clean crop (returns a PIL.Image): frames + spotlights + audience removed
+img = slide_crop.crop_content(photo_path)
+
+# Force a UNIFORM pixel size (aspect may break) — use for the Other 3-up stack
+# so the stacked thumbnails line up perfectly:
+img = slide_crop.crop_content(photo_path, target_size=(1600, 900))
+
+# Just the box, if you need coordinates: (left, top, right, bottom)
+box = slide_crop.detect_content_region(cv2_bgr_image)
+```
+
+**How it generalizes (no hard-coded colors).** It was distilled from a user's
+manual crops and validated at 1.3 % mean edge error over 51 photos. Two
+color-agnostic cues, so it transfers to other venues (e.g. **red** frames, or
+**no** spotlight bar):
+
+- **Top / Bottom** — the slide is BRIGHT; spotlights/ceiling and audience are
+  DARK. Take the longest run of bright rows. (Colored spotlights are bright
+  *dots* but a dark *row average*, so brightness, not saturation, is used here.)
+  For a dark slide where brightness can't cut an edge, it falls back to
+  SATURATION for that edge (a deep-blue slide is saturated; ceiling/audience are
+  not).
+- **Left / Right** — the decorative frame is a band whose color SATURATION is
+  far higher than the slide content (a solid panel vs. text/charts). Cut to the
+  inner edge of the high-saturation edge band. A uniformly-saturated slide has
+  no distinct frame and is kept full width.
+
+**Usage in the generated script:**
+- **Focus** photos → `crop_content(path)`, placed preserving aspect ratio so the
+  ~16:9 slide fills the photo area without distortion.
+- **Other** photos → `crop_content(path, target_size=(1600, 900))` so all three
+  thumbnails are identical size and stack neatly (uniform size is preferred over
+  preserving aspect for the Other column).
+
+If a future venue behaves differently, the tunables at the top of
+`detect_content_region` (`_C_BRIGHT_THR`, `_C_FRAME_REL`, `_C_FRAME_CAP`,
+`_C_UNIFORM`, …) are the knobs to adjust.
+
+---
+
 ## Step 4 — Generate Conference Script / 生成会议专属脚本
 
 Read the bundled template:
 - `templates/generate_pptx_template.py` → PPTX output
+
+Copy **`slide_crop.py`** next to the generated script so `import slide_crop`
+works, then crop every photo through `crop_content` as described in Step 3.5.
 
 Steps / 步骤:
 1. Copy the template to the output directory (same level as the photo library)

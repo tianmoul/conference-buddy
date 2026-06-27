@@ -4,6 +4,23 @@
 > 
 > 从会议幻灯片照片库自动生成专业总结 PPTX，无需手动录入内容。
 
+**Version 2.0**
+
+---
+
+## What's New in 2.0
+
+- **Automatic slide-content cropping (`slide_crop.py`).** Conference photos show
+  the slide on a decorated LED wall — colored side frames, stage spotlights, and
+  audience heads around the real content. ConferenceBuddy now auto-crops every
+  photo down to just the **presentation slide** ("PPT info region"), removing
+  frames / spotlights / audience. The detector is **color-agnostic** (works with
+  blue *or* red frames, with or without a spotlight bar) and was distilled from
+  hand-made crops — validated at **1.3 % mean edge error over 51 photos**.
+- **Tidier Other layout.** The 3 supporting-speaker thumbnails are cropped to a
+  **uniform size** and laid out to fill the space neatly without overflowing the
+  page.
+
 ---
 
 ## What It Does
@@ -12,10 +29,11 @@ You point ConferenceBuddy at a folder of conference slide photos. It:
 
 1. **Scans** the folder — auto-detects `Focus/` + `Other/` structure, or treats everything as Focus slides
 2. **Reads** each photo with Claude's vision — extracts speaker name, slide title, keywords, and key bullet points in Chinese
-3. **Generates** a ready-to-run Python script populated with all the extracted data
-4. **Runs** the script — outputs a consistent-layout PPTX
+3. **Crops** each photo to the slide content — side frames, spotlights, and audience removed (`slide_crop.crop_content`)
+4. **Generates** a ready-to-run Python script populated with all the extracted data
+5. **Runs** the script — outputs a consistent-layout PPTX
 
-Every slide gets one photo, a keyword bar pinned at a fixed position, and a right-hand text column with the summary. The layout never drifts between pages.
+Every slide gets one cropped photo, a keyword bar pinned at a fixed position, and a right-hand text column with the summary. The layout never drifts between pages.
 
 ---
 
