@@ -1,6 +1,6 @@
 ---
 name: conference-buddy
-version: 2.1.0
+version: 2.1.1
 description: |
   Automatically generate a professional conference summary PPTX from a folder of slide photos. Uses vision AI to read each photo and extract speaker names, slide titles, keywords, and bullet points — no manual data entry needed.
 
@@ -230,7 +230,8 @@ Read the bundled template:
 
 Copy **`slide_crop.py`** next to the generated script so `import slide_crop`
 works, then crop every photo through `crop_content` as described in Step 3.5.
-Populate `SCAN_NUMS` from the `scan` flags collected in Step 3 (see Step 3.6).
+The document-scan is automatic (`SCAN_MODE='auto'`, see Step 3.6) — no per-slide
+list to populate.
 
 Steps / 步骤:
 1. Copy the template to the output directory (same level as the photo library)
@@ -255,7 +256,18 @@ FOCUS_TITLE_ZH = '演讲题目中文'
 FOCUS_TITLE_EN = 'Talk Title in English'
 
 BAR_FOOTER = 'ConferenceAbbr  ·  Speaker  ·  YYYY-MM-DD'
+
+# Fonts & sizes / 字体与字号（可调）
+FONT_ZH      = '宋体'                 # Chinese typeface 中文字体
+FONT_EN      = 'Times New Roman'      # Latin typeface   英文字体
+SUMMARY_SIZE = 14                     # right-column summary size 右侧摘要字号
+                                      #   bigger = clearer; smaller (11/12) fits more text
+OTHER_SIZE   = 13                     # other-speaker bullet size 其他讲者要点字号
 ```
+
+`apply_fonts()` runs at the end of `build()` and sets **FONT_EN for Latin glyphs +
+FONT_ZH for Chinese glyphs** on every run (PowerPoint picks per character). To
+fit a longer summary, lower `SUMMARY_SIZE` (sub-points auto = `SUMMARY_SIZE - 2`).
 
 **Output naming / 输出命名建议:**
 - PPTX: `{ConferenceAbbr}_{Year}_会议总结.pptx`

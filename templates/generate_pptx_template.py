@@ -45,6 +45,16 @@ OTHER_SECTION_AFFIL   = '以下讲者关键信息摘要'
 
 BAR_FOOTER = 'AI助力RWE  ·  讲者姓名  ·  CMAC  ·  2026-06-25'  # 每页关键概念栏页脚
 
+# ── Fonts / 字体（可调）────────────────────────────────────────────────────────
+# Applied to EVERY run at the end of build(): Chinese chars use FONT_ZH, Latin
+# chars use FONT_EN (PowerPoint picks per character). 每段文字：中文用 FONT_ZH，
+# 英文/数字用 FONT_EN。SUMMARY_SIZE 控制右侧摘要正文字号——想塞更多文字就调小
+# (如 11/12)，想看得更清楚就调大 (如 14/16)。
+FONT_ZH      = '宋体'                  # Chinese typeface  中文字体
+FONT_EN      = 'Times New Roman'       # Latin typeface    英文字体
+SUMMARY_SIZE = 14                      # Focus 摘要正文字号 (sub-points = -2)
+OTHER_SIZE   = 13                      # Other 要点正文字号 (sub-points = -1)
+
 # ══════════════════════════════════════════════════════════════════════════════
 # 数据区 — 由视觉 AI 自动提取后填入
 # ══════════════════════════════════════════════════════════════════════════════
@@ -159,6 +169,30 @@ def add_textbox(slide, l, t, w, h, word_wrap=True):
     txb = slide.shapes.add_textbox(Cm(l), Cm(t), Cm(w), Cm(h))
     txb.text_frame.word_wrap = word_wrap
     return txb
+
+
+def _set_run_fonts(run, latin, ea):
+    """Set Latin (English/digits) and East-Asian (Chinese) typefaces on a run so
+    PowerPoint renders each character with the right font."""
+    run.font.name = latin                      # a:latin
+    rPr = run._r.get_or_add_rPr()
+    for tag, face in (('a:ea', ea), ('a:cs', latin)):
+        el = rPr.find(qn(tag))
+        if el is None:
+            el = rPr.makeelement(qn(tag), {})
+            rPr.append(el)
+        el.set('typeface', face)
+
+
+def apply_fonts(prs):
+    """Apply FONT_ZH (Chinese) + FONT_EN (Latin) to every run in the deck."""
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for para_ in shape.text_frame.paragraphs:
+                for run in para_.runs:
+                    _set_run_fonts(run, FONT_EN, FONT_ZH)
 
 
 def para(tf, text, font_name='Microsoft YaHei', size=12, bold=False,
@@ -328,7 +362,7 @@ def build_focus_slide(prs, idx, num, title, tags, bullets):
             r = p.add_run()
             r.text = line.strip()
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(10)
+            r.font.size = Pt(SUMMARY_SIZE - 2)
             r.font.color.rgb = MUTED
         else:
             p = tf2.add_paragraph() if not first else tf2.paragraphs[0]
@@ -339,7 +373,7 @@ def build_focus_slide(prs, idx, num, title, tags, bullets):
             r = p.add_run()
             r.text = line
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(11)
+            r.font.size = Pt(SUMMARY_SIZE)
             r.font.color.rgb = TEXT_DARK
 
     # Keyword bar — always at fixed position BAR_T
@@ -401,7 +435,7 @@ def build_other_slide(prs, session):
             r = p.add_run()
             r.text = line.strip()
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(12)
+            r.font.size = Pt(OTHER_SIZE - 1)
             r.font.color.rgb = MUTED
             p.space_before = Pt(2)
         else:
@@ -411,7 +445,7 @@ def build_other_slide(prs, session):
             r = p.add_run()
             r.text = line
             r.font.name = 'Microsoft YaHei'
-            r.font.size = Pt(13)
+            r.font.size = Pt(OTHER_SIZE)
             r.font.color.rgb = TEXT_DARK
             p.space_before = Pt(6)
             p.space_after = Pt(2)
@@ -468,6 +502,7 @@ def build():
             print(f"  ... {sess['speaker']}")
             build_other_slide(prs, sess)
 
+    apply_fonts(prs)
     print(f'保存到 {OUTPUT} ...')
     prs.save(OUTPUT)
     print(f'完成！共 {len(prs.slides)} 张幻灯片')
